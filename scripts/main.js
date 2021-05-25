@@ -1,1 +1,161 @@
-var ajax=function(e){if(e=Object.assign({url:"",method:"post",data:null,success:function(e,t){},error:function(e,t){}},e),window.XMLHttpRequest){var t=new XMLHttpRequest;t.onreadystatechange=function(){if(4===t.readyState){if(200!==t.status)return void(e.error&&"function"==typeof e.error&&e.error(t.responseText,t));e.success&&"function"==typeof e.success&&e.success(t.responseText,t)}},t.open(e.method,e.url),e.data?t.send(JSON.stringify(e.data)):t.send()}};window.app={lazyload:function(){new LazyLoad({elements_selector:".lazy:not(.loaded)",callback_load:function(e){if(e.classList.contains("lazy--bg")){var t=void 0!==e.currentSrc?e.currentSrc:e.src;e.src!==e.parentNode.dataset.src&&(e.parentNode.dataset.src=t,e.parentNode.style.backgroundImage='url("'+t+'")')}}})},cookies:function(){"true"!=Cookies.get("cookies")&&(app.cookiesbar=document.getElementsByClassName("cookie-bar")[0],app.cookiesbar.style.display="block"),document.addEventListener("click",function(e){e.target.matches(".close-cookie")&&(e.preventDefault(),app.cookiesbar.style.display="none",Cookies.set("cookies",!0,{path:"/",secure:!1,domain:"",expires:30}))},!1)},anchors:function(){document.querySelectorAll(".scroll-to").forEach(function(n){n.onclick=function(e){e.preventDefault();var t=n.getAttribute("href"),o=document.querySelector(t).offsetTop-80;a(document.documentElement,o,500)}});var a=function(t,e,o){var n=t.offsetTop,a=e-n,c=0,r=function(){var e=s(c+=20,n,a,o);t.scrollTop=e,c<o&&setTimeout(r,20)};r()},s=function(e,t,o,n){return(e/=n/2)<1?o/2*e*e+t:-o/2*(--e*(e-2)-1)+t}},init:function(){app.lazyload(),app.cookies(),app.anchors();new Rellax(".rellax")}},document.addEventListener("DOMContentLoaded",function(){app.init()});
+var ajax = function (settings) {
+	var defaults = {
+		url: "",
+		method: "post",
+		data: null,
+		success: function (response, request) {
+		},
+		error: function (response, request) {
+		}
+	};
+	
+	settings = Object.assign(defaults, settings);
+	
+	// Feature detection
+	if (!window.XMLHttpRequest)
+		return;
+	
+	// Create new request
+	var request = new XMLHttpRequest();
+	
+	// Setup callbacks
+	request.onreadystatechange = function () {
+		// If the request is complete
+		if (request.readyState === 4) {
+			// If the request failed
+			if (request.status !== 200) {
+				if (settings.error && typeof settings.error === "function") {
+					settings.error(request.responseText, request);
+				}
+				return;
+			}
+			
+			// If the request succeeded
+			if (settings.success && typeof settings.success === "function") {
+				settings.success(request.responseText, request);
+			}
+		}
+	};
+	
+	request.open(settings.method, settings.url);
+	
+	if (settings.data) {
+		request.send(JSON.stringify(settings.data));
+	} else {
+		request.send();
+	}
+};
+window.app = {
+	lazyload: function () {
+		var bgs = new LazyLoad({
+			elements_selector: ".lazy:not(.loaded)",
+			callback_load: function (e) {
+				if (e.classList.contains("lazy--bg")) {
+					var src = typeof e.currentSrc !== "undefined" ?
+						e.currentSrc :
+						e.src;
+					if (e.src !== e.parentNode.dataset.src) {
+						e.parentNode.dataset.src = src;
+						e.parentNode.style.backgroundImage = "url(\"" + src + "\")";
+					}
+				}
+			}
+		});
+	},
+	
+	cookies: function() {
+		if (Cookies.get('cookies') != "true") {
+			app.cookiesbar = document.getElementsByClassName("cookie-bar")[0];
+			app.cookiesbar.style.display = 'block';
+		}
+
+		document.addEventListener('click', function (event) {
+			if (!event.target.matches('.close-cookie')) return;
+			event.preventDefault();
+			app.cookiesbar.style.display = 'none';
+			Cookies.set('cookies', true, {
+				path: '/',
+				secure: false,
+				domain: '',
+				expires: 30
+			 });
+		}, false);
+	},
+
+	anchors: function() {
+		document.querySelectorAll('.scroll-to').forEach(function(anchor) {
+			anchor.onclick = function(e) {
+				e.preventDefault()
+				var href = anchor.getAttribute('href'),
+					target = document.querySelector(href),
+					to = target.offsetTop - 80;
+				scrollTo(document.documentElement, to, 500);
+			}
+		})
+  
+		var scrollTo = function(element, to, duration) {
+			var start = element.offsetTop,
+				change = to - start,
+			 	currentTime = 0,
+				increment = 20;
+
+
+			var animateScroll = function() {
+				currentTime += increment;
+				var val = easeInOutQuad(currentTime, start, change, duration);
+				element.scrollTop = val;
+				if (currentTime < duration) {
+					setTimeout(animateScroll, increment);
+				}
+			}
+
+			animateScroll()
+		}
+  
+		var easeInOutQuad = function(t, b, c, d) {
+			t /= d / 2
+			if (t < 1) return c / 2 * t * t + b
+			t--
+			return -c / 2 * (t * (t - 2) - 1) + b
+		}
+	},
+
+	menu: function(){
+		const menu = new MmenuLight(
+			document.querySelector( "#menu" )
+		);
+		const navigator = menu.navigation();
+		const drawer = menu.offcanvas();
+		const hamburger = document.querySelector( ".hamburger" )
+	
+		document.querySelector( 'a[href="#menu"]' ).addEventListener('click', (evnt) => {
+			evnt.preventDefault();
+			drawer.open();
+			hamburger.classList.add('is-active');
+		});
+
+		const observer = new MutationObserver((mutationsList, observer) => {
+			for(let mutation of mutationsList) {
+				if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+					if(!document.body.classList.contains("mm-ocd-opened")) {
+						hamburger.classList.remove('is-active');	
+					}
+				}
+			}
+		});
+		
+		observer.observe(document.body, { attributes: true });
+	},
+
+	init: function() {
+		app.lazyload();
+		app.cookies();
+		app.anchors();
+		app.menu();
+		var rellax = new Rellax('.rellax');
+	}
+};
+
+document.addEventListener("DOMContentLoaded", function () {
+	app.init();
+});
